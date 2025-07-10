@@ -32,6 +32,7 @@ module.load = function()
             min_args = 1,
             max_args = 1,
             subcommands = {
+                get_context = { args = 0, name = "context.get_contexts" },
                 toggle = { args = 0, name = "context.toggle" },
                 enable = { args = 0, name = "context.enable" },
                 disable = { args = 0, name = "context.disable" },
@@ -233,7 +234,9 @@ module.private = {
 
 module.on_event = function(event)
     if vim.tbl_contains({ "core.keybinds", "core.neorgcmd" }, event.split_type[1]) then
-        if event.split_type[2] == "context.toggle" then
+        if event.split_type[2] == "context.get_context" then
+            module.private.get_contexts()
+        elseif event.split_type[2] == "context.toggle" then
             module.private.toggle()
         elseif event.split_type[2] == "context.enable" then
             module.private.enable()
@@ -248,6 +251,7 @@ module.events.subscribed = {
         ["context.toggle"] = true,
         ["context.enable"] = true,
         ["context.disable"] = true,
+        ["context.get_context"] = true,
     },
 }
 
