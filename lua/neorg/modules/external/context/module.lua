@@ -235,7 +235,8 @@ module.private = {
 module.on_event = function(event)
     if vim.tbl_contains({ "core.keybinds", "core.neorgcmd" }, event.split_type[1]) then
         if event.split_type[2] == "context.get_context" then
-            vim.print(module.private.get_contexts())
+            local lines = module.private.get_contexts()
+            vim.wo.winbar = table.concat(lines, " > ")
         elseif event.split_type[2] == "context.toggle" then
             module.private.toggle()
         elseif event.split_type[2] == "context.enable" then
