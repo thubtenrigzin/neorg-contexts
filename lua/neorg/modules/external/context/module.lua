@@ -21,20 +21,45 @@ module.setup = function()
     }
 end
 
-module.private = {
+module.config.public = {
     enabled = true,
+    activate_offscreen_only = true,
+}
+
+module.load = function()
+    module.required["core.neorgcmd"].add_commands_from_table({
+        context = {
+            min_args = 1,
+            max_args = 1,
+            subcommands = {
+                toggle = { args = 0, name = "context.toggle" },
+                enable = { args = 0, name = "context.enable" },
+                disable = { args = 0, name = "context.disable" },
+            },
+        },
+    })
+    local context_augroup = vim.api.nvim_create_augroup("neorg-contexts", {})
+    vim.api.nvim_create_autocmd({ "WinScrolled", "BufEnter", "WinEnter", "CursorMoved" }, {
+        callback = function()
+            module.private.update_window()
+        end,
+        group = context_augroup,
+    })
+end
+
+module.private = {
     toggle = function()
-        if module.private.enabled == true then
-            module.private.enabled = false
+        if module.config.public.enabled == true then
+            module.config.public.enabled = false
         else
-            module.private.enabled = true
+            module.config.public.enabled = true
         end
     end,
     enable = function()
-        module.private.enabled = true
+        module.config.public.enabled = true
     end,
     disable = function()
-        module.private.enabled = false
+        module.config.public.enabled = false
     end,
     get_contexts = function()
         local highlight_table = {
@@ -75,6 +100,9 @@ module.private = {
         local highlights = {}
 
         local function is_valid(potential_node)
+            if not module.config.public.activate_offscreen_only then
+                return true
+            end
             local topline = vim.fn.line("w0")
             local row = potential_node:start()
             return row <= (topline + #heading_nodes)
@@ -177,7 +205,7 @@ module.private = {
         vim.api.nvim_win_set_option(winnr, "winhl", "NormalFloat:NeorgContext")
     end,
     update_window = function()
-        if not module.private.enabled then
+        if not module.config.public.enabled then
             if winnr and vim.api.nvim_win_is_valid(winnr) then
                 vim.api.nvim_win_close(winnr, true)
                 winnr = nil
@@ -202,31 +230,6 @@ module.private = {
         module.private.open_win()
     end,
 }
-
-module.config.public = {}
-
-module.public = {}
-
-module.load = function()
-    module.required["core.neorgcmd"].add_commands_from_table({
-        context = {
-            min_args = 1,
-            max_args = 1,
-            subcommands = {
-                toggle = { args = 0, name = "context.toggle" },
-                enable = { args = 0, name = "context.enable" },
-                disable = { args = 0, name = "context.disable" },
-            },
-        },
-    })
-    local context_augroup = vim.api.nvim_create_augroup("neorg-contexts", {})
-    vim.api.nvim_create_autocmd({ "WinScrolled", "BufEnter", "WinEnter", "CursorMoved" }, {
-        callback = function()
-            module.private.update_window()
-        end,
-        group = context_augroup,
-    })
-end
 
 module.on_event = function(event)
     if vim.tbl_contains({ "core.keybinds", "core.neorgcmd" }, event.split_type[1]) then
